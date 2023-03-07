@@ -1,24 +1,46 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useCallback, useEffect, useState } from 'react';
 import './App.css';
 
+const socket = new WebSocket("ws://127.0.0.1:8080/ws");
+
 function App() {
+  const [message, setMessage] = useState('')
+  const [inputValue, setInputValue] = useState('')
+
+  useEffect(() => {
+    // socket.onerror = () => {
+    //   socket = socket.OPEN
+    // }
+    socket.onopen = () => {
+      setMessage('Connected')
+    };
+
+    socket.onmessage = (e) => {
+      setMessage("Get message from server: " + e.data)
+    };
+
+    return () => {
+      socket.close()
+    }
+  }, [])
+
+  const handleClick = useCallback((e: any) => {
+    e.preventDefault()
+
+    socket.send(JSON.stringify({
+      message: inputValue
+    }))
+  }, [inputValue])
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value)
+  }, [])
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <input id="input" type="text" value={inputValue} onChange={handleChange} />
+      <button onClick={handleClick}>Send</button>
+      <pre>{message}</pre>
     </div>
   );
 }
